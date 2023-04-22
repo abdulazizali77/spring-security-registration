@@ -7,10 +7,15 @@ import com.baeldung.security.google2fa.CustomWebAuthenticationDetailsSource;
 import com.baeldung.security.location.DifferentLocationChecker;
 import com.maxmind.geoip2.DatabaseReader;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,7 +29,11 @@ import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.DefaultRedirectStrategy;
+import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -32,9 +41,15 @@ import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.rememberme.InMemoryTokenRepositoryImpl;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.web.servlet.LocaleResolver;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Date;
 
 @ComponentScan(basePackages = { "com.baeldung.security" })
 // @ImportResource({ "classpath:webSecurityConfig.xml" })
@@ -59,6 +74,11 @@ public class SecSecurityConfig {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private MessageSource messageSource;
+
+    @Autowired
+    private LocaleResolver localeResolver;
 
     @Bean
     public AuthenticationManager authManager(HttpSecurity http) throws Exception {
@@ -73,6 +93,28 @@ public class SecSecurityConfig {
             .antMatchers("/resources/**", "/h2/**");
     }
 
+
+    @Bean("mySimpleAccessDeniedHandler")
+    public AccessDeniedHandler accessDeniedHandler() {
+        final Logger LOGGER = LoggerFactory.getLogger(getClass());
+        final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
+
+        AccessDeniedHandlerImpl accessDeniedHandlerImpl = new AccessDeniedHandlerImpl() {
+            @Override
+            public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
+                String message = messageSource.getMessage("message.invalidAccess", new Object[]{request.getUserPrincipal().getName(),
+                        request.getRequestURI()}, localeResolver.resolveLocale(request));
+                LOGGER.error(message);
+                //FIXME: bad hack?
+                request.getSession().setAttribute("temp", request.getRequestURI());
+                //TODO: parametrize
+                redirectStrategy.sendRedirect(request, response, "/error.html");
+            }
+        };
+
+        return accessDeniedHandlerImpl;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf()
@@ -81,6 +123,10 @@ public class SecSecurityConfig {
                 .expressionHandler(webSecurityExpressionHandler())
                 .antMatchers(HttpMethod.GET, "/roleHierarchy")
                 .hasRole("STAFF")
+            .antMatchers("/admin*")
+            .hasRole("ADMIN")
+            .antMatchers("/management*")
+            .hasRole("MANAGER")
             .antMatchers("/login*", "/logout*", "/signin/**", "/signup/**", "/customLogin", "/user/registration*", "/registrationConfirm*", "/expiredAccount*", "/registration*", "/badUser*", "/user/resendRegistrationToken*", "/forgetPassword*",
                 "/user/resetPassword*", "/user/savePassword*", "/updatePassword*", "/user/changePassword*", "/emailError*", "/resources/**", "/old/user/registration*", "/successRegister*", "/qrcode*", "/user/enableNewLoc*")
             .permitAll()
@@ -98,7 +144,9 @@ public class SecSecurityConfig {
             .successHandler(myAuthenticationSuccessHandler)
             .failureHandler(authenticationFailureHandler)
             .authenticationDetailsSource(authenticationDetailsSource)
-            .permitAll()
+            .and()
+            .exceptionHandling()
+            .accessDeniedHandler(accessDeniedHandler())
             .and()
             .sessionManagement()
             .invalidSessionUrl("/invalidSession.html")

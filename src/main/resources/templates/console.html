@@ -19,7 +19,7 @@
 	<!--TODO: i8n-->
     <h1>This is the landing page for the admin|manager</h1>
     
-    <div sec:authorize="hasRole('ROLE_STANDARD')">This text is only visible to a user</div>
+    <div sec:authorize="hasRole('ROLE_USER')">This text is only visible to a user</div>
     <div sec:authorize="hasRole('ROLE_MANAGER')">This text is only visible to a manager</div>
     <div sec:authorize="hasRole('ROLE_ADMIN')"> This text is only visible to an admin</div>
     
