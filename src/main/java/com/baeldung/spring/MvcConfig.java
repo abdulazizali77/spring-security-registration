@@ -1,7 +1,5 @@
 package com.baeldung.spring;
 
-import java.util.Locale;
-
 import com.baeldung.validation.EmailValidator;
 import com.baeldung.validation.PasswordMatchesValidator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +22,10 @@ import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
+import org.thymeleaf.spring5.templateresolver.SpringResourceTemplateResolver;
+import org.thymeleaf.templatemode.TemplateMode;
+
+import java.util.Locale;
 
 @Configuration
 @ComponentScan(basePackages = { "com.baeldung.web" })
@@ -36,6 +38,30 @@ public class MvcConfig implements WebMvcConfigurer {
 
     @Autowired
     private MessageSource messageSource;
+
+    @Bean
+    public SpringResourceTemplateResolver defaultTemplateResolver() {
+        SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
+        templateResolver.setPrefix("classpath:/templates/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setCharacterEncoding("UTF-8");
+        templateResolver.setOrder(0);
+        templateResolver.setCheckExistence(true);
+        return templateResolver;
+    }
+
+    @Bean
+    public SpringResourceTemplateResolver privateTemplateResolver() {
+        SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
+        templateResolver.setPrefix("classpath:/private/");
+        templateResolver.setSuffix(".html");
+        templateResolver.setTemplateMode(TemplateMode.HTML);
+        templateResolver.setCharacterEncoding("UTF-8");
+        templateResolver.setOrder(1);
+        templateResolver.setCheckExistence(true);
+        return templateResolver;
+    }
 
     @Override
     public void addViewControllers(final ViewControllerRegistry registry) {
@@ -58,6 +84,7 @@ public class MvcConfig implements WebMvcConfigurer {
         registry.addViewController("/changePassword.html");
         registry.addViewController("/users.html");
         registry.addViewController("/qrcode.html");
+        registry.addViewController("/management.html");
     }
 
     @Override
