@@ -77,6 +77,7 @@ public class MvcConfig implements WebMvcConfigurer {
         registry.addViewController("/emailError.html");
         registry.addViewController("/home.html");
         registry.addViewController("/invalidSession.html");
+        registry.addViewController("/admin");
         registry.addViewController("/admin.html");
         registry.addViewController("/successRegister.html");
         registry.addViewController("/forgetPassword.html");
@@ -84,7 +85,9 @@ public class MvcConfig implements WebMvcConfigurer {
         registry.addViewController("/changePassword.html");
         registry.addViewController("/users.html");
         registry.addViewController("/qrcode.html");
+        registry.addViewController("/management");
         registry.addViewController("/management.html");
+        registry.addViewController("/console.html");
     }
 
     @Override
