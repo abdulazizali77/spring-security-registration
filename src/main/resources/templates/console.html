@@ -16,14 +16,15 @@
 
 <div class="container">
 	<div th:if="${message != null}" class="alert alert-info" th:utext="${message}">message</div>
-	
-    <h1>This is the landing page for the admin</h1>
+	<!--TODO: i8n-->
+    <h1>This is the landing page for the admin|manager</h1>
     
-    <div sec:authorize="hasAuthority('READ_PRIVILEGE')">This text is only visible to a user</div>
-          
-    <div sec:authorize="hasAuthority('WRITE_PRIVILEGE')"> This text is only visible to an admin</div>
+    <div sec:authorize="hasRole('ROLE_STANDARD')">This text is only visible to a user</div>
+    <div sec:authorize="hasRole('ROLE_MANAGER')">This text is only visible to a manager</div>
+    <div sec:authorize="hasRole('ROLE_ADMIN')"> This text is only visible to an admin</div>
     
-      <a class="btn btn-default" th:href="@{/admin.html}" th:utext="#{label.pages.admin}">admin</a>
+      <a sec:authorize="hasRole('ROLE_MANAGER')" class="btn btn-default" th:href="@{/management.html}" th:utext="#{label.pages.manager}">manager</a>
+      <a sec:authorize="hasRole('ROLE_ADMIN')" class="btn btn-default" th:href="@{/admin.html}" th:utext="#{label.pages.admin}">admin</a>
       <br/>
       <a class="btn btn-default" th:href="@{/changePassword.html}" th:utext="#{message.changePassword}">change password</a>
       <br/>
