@@ -123,6 +123,9 @@ public class SecSecurityConfig {
                 .expressionHandler(webSecurityExpressionHandler())
                 .antMatchers(HttpMethod.GET, "/roleHierarchy")
                 .hasRole("STAFF")
+            .antMatchers("/console*")
+                .hasAnyRole("ADMIN", "MANAGER")
+
             .antMatchers("/admin*")
             .hasRole("ADMIN")
             .antMatchers("/management*")
